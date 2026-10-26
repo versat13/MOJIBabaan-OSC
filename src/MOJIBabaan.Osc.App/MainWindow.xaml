@@ -1,0 +1,209 @@
+<ui:FluentWindow x:Class="MOJIBabaan.Osc.Gui.MainWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="MOJIBabaan OSC"
+                 Width="960" Height="780" MinWidth="880" MinHeight="720"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 WindowCornerPreference="Round"
+                 WindowStartupLocation="CenterScreen">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="B2V" />
+
+        <Style x:Key="Card" TargetType="Border">
+            <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="16" />
+        </Style>
+
+        <Style x:Key="CardTitle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        </Style>
+
+        <Style x:Key="Pill" TargetType="Border">
+            <Setter Property="Background" Value="#1AFFFFFF" />
+            <Setter Property="CornerRadius" Value="13" />
+            <Setter Property="Padding" Value="11,4" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <ui:TitleBar Grid.Row="0" Title="MOJIBabaan OSC" />
+
+        <Grid Grid.Row="1" Margin="24,6,24,20">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="20" />
+                <ColumnDefinition Width="290" />
+            </Grid.ColumnDefinitions>
+
+            <!-- 左: 入力・プレビュー・ボタン・登録内容 -->
+            <StackPanel Grid.Column="0">
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Border Style="{StaticResource Pill}">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="{Binding RecvBrush}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                                <TextBlock Text="{Binding RecvText}" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Style="{StaticResource Pill}">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="{Binding AvatarBrush}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                                <TextBlock Text="{Binding AvatarText}" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <ui:Button Grid.Column="1" Appearance="Transparent" ToolTip="設定"
+                               Icon="{ui:SymbolIcon Settings24}" Click="Settings_Click" />
+                </Grid>
+
+                <TextBlock Text="{Binding NetNote}" Visibility="{Binding HasNetNote, Converter={StaticResource B2V}}"
+                           Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0" />
+
+                <!-- 入力 -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="文言" Style="{StaticResource CardTitle}" />
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="52" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBox x:Name="Line1Box" Text="{Binding Line1, UpdateSourceTrigger=PropertyChanged}"
+                                        PlaceholderText="1 行目（10 文字まで）" FontSize="16" KeyDown="Input_KeyDown" />
+                            <TextBlock Grid.Column="1" Text="{Binding Count1}" Foreground="{Binding Count1Brush}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12" />
+                        </Grid>
+                        <Grid Margin="0,8,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="52" />
+                            </Grid.ColumnDefinitions>
+                            <ui:TextBox x:Name="Line2Box" Text="{Binding Line2, UpdateSourceTrigger=PropertyChanged}"
+                                        PlaceholderText="2 行目（空でも可）" FontSize="16" KeyDown="Input_KeyDown" />
+                            <TextBlock Grid.Column="1" Text="{Binding Count2}" Foreground="{Binding Count2Brush}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- プレビュー -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="プレビュー（送られる内容）" Style="{StaticResource CardTitle}" />
+                        <ItemsControl ItemsSource="{Binding Cells}" Margin="0,10,0,0">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="10" Rows="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="2" Height="50" CornerRadius="6" BorderThickness="1"
+                                            Background="{Binding Fill}" BorderBrush="{Binding Stroke}">
+                                        <TextBlock Text="{Binding Text}" Foreground="{Binding Fore}" FontSize="24" FontWeight="Bold"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <TextBlock Text="{Binding UnsupportedNote}" Visibility="{Binding HasUnsupported, Converter={StaticResource B2V}}"
+                                   Foreground="{x:Static SystemColors.ControlTextBrush}" TextWrapping="Wrap" FontSize="12" Margin="2,8,0,0"
+                                   x:Name="UnsupportedText" />
+                        <TextBlock Text="{Binding OverflowNote}" Visibility="{Binding HasOverflow, Converter={StaticResource B2V}}"
+                                   TextWrapping="Wrap" FontSize="12" Margin="2,4,0,0" x:Name="OverflowText" />
+                    </StackPanel>
+                </Border>
+
+                <!-- ボタン -->
+                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
+                    <ui:Button Content="登録" MinWidth="110" Height="38" IsEnabled="{Binding CanOperate}" Click="Register_Click" />
+                    <ui:Button Content="登録して再生" Appearance="Primary" MinWidth="150" Height="38" Margin="10,0,0,0"
+                               IsEnabled="{Binding CanOperate}" Click="RegisterPlay_Click" />
+                    <ui:Button Content="再生" MinWidth="90" Height="38" Margin="10,0,0,0"
+                               IsEnabled="{Binding CanOperate}" Click="Play_Click" />
+                </StackPanel>
+                <TextBlock Text="{Binding Status}" Foreground="{Binding StatusBrush}" FontSize="12" TextWrapping="Wrap" Margin="2,8,0,0" MinHeight="18" />
+
+                <!-- 登録内容 -->
+                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
+                    <StackPanel>
+                        <TextBlock Text="アバターの登録内容" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="不明（VRChat から値を受け取るまで）" Margin="0,8,0,0" FontSize="13"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
+                                   Visibility="{Binding RegUnknown, Converter={StaticResource B2V}}" />
+                        <StackPanel Margin="0,8,0,0" Visibility="{Binding RegKnown, Converter={StaticResource B2V}}">
+                            <TextBlock Text="{Binding RegLine1}" FontSize="22" FontWeight="Bold" x:Name="Reg1" />
+                            <TextBlock Text="{Binding RegLine2}" FontSize="22" FontWeight="Bold" x:Name="Reg2" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!-- 右: 履歴 -->
+            <Border Grid.Column="2" Style="{StaticResource Card}" Margin="0,38,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <StackPanel>
+                        <TextBlock Text="履歴" Style="{StaticResource CardTitle}" />
+                        <TextBlock Text="クリックで入力欄に戻します。ピンは上限に数えません。" FontSize="11"
+                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" Margin="0,4,0,8" />
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding Rows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Grid Margin="0,0,0,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ui:Button Appearance="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                                   Click="HistoryItem_Click" ToolTip="{Binding Label}">
+                                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                                        </ui:Button>
+                                        <ui:Button Grid.Column="1" Appearance="Transparent" Padding="8" Click="Pin_Click" ToolTip="ピン留め">
+                                            <ui:SymbolIcon Symbol="Pin24" Filled="{Binding Pinned}" FontSize="16">
+                                                <ui:SymbolIcon.Style>
+                                                    <Style TargetType="ui:SymbolIcon">
+                                                        <Setter Property="Opacity" Value="0.35" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Pinned}" Value="True">
+                                                                <Setter Property="Opacity" Value="1" />
+                                                                <Setter Property="Foreground" Value="#F2C94C" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </ui:SymbolIcon.Style>
+                                            </ui:SymbolIcon>
+                                        </ui:Button>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</ui:FluentWindow>

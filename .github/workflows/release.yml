@@ -1,0 +1,45 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.0.x
+
+      - name: Build
+        run: dotnet build MOJIBabaan.Osc.sln -c Release
+
+      - name: Test
+        run: dotnet test MOJIBabaan.Osc.sln -c Release --no-build
+
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: >
+          dotnet publish src/MOJIBabaan.Osc.App -c Release -r win-x64 --self-contained true
+          -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true
+          -o artifacts/publish
+
+      - name: Zip
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/publish/MOJIBabaan-OSC.exe -DestinationPath "artifacts/MOJIBabaan-OSC-${{ github.ref_name }}-win-x64.zip"
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/MOJIBabaan-OSC-${{ github.ref_name }}-win-x64.zip
+          generate_release_notes: true

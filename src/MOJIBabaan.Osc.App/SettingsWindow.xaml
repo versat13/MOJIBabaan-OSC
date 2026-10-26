@@ -1,0 +1,53 @@
+<ui:FluentWindow x:Class="MOJIBabaan.Osc.Gui.SettingsWindow"
+                 xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                 xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                 xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
+                 Title="設定" Width="440" Height="460"
+                 ExtendsContentIntoTitleBar="True"
+                 WindowBackdropType="None"
+                 ResizeMode="NoResize"
+                 ShowInTaskbar="False"
+                 WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <ui:TitleBar Grid.Row="0" Title="設定" ShowMaximize="False" ShowMinimize="False" />
+        <StackPanel Grid.Row="1" Margin="24,8,24,20">
+            <TextBlock Text="送信先（VRChat）" FontWeight="SemiBold" />
+            <Grid Margin="0,8,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="12" />
+                    <ColumnDefinition Width="100" />
+                </Grid.ColumnDefinitions>
+                <StackPanel>
+                    <TextBlock Text="IP アドレス" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <ui:TextBox x:Name="HostBox" Margin="0,4,0,0" />
+                </StackPanel>
+                <StackPanel Grid.Column="2">
+                    <TextBlock Text="ポート" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                    <ui:TextBox x:Name="SendPortBox" Margin="0,4,0,0" />
+                </StackPanel>
+            </Grid>
+
+            <TextBlock Text="受信" FontWeight="SemiBold" Margin="0,18,0,0" />
+            <StackPanel Margin="0,8,0,0">
+                <TextBlock Text="受信ポート（VRChat からの値を受け取る）" FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}" />
+                <ui:TextBox x:Name="RecvPortBox" Width="100" HorizontalAlignment="Left" Margin="0,4,0,0" />
+            </StackPanel>
+
+            <ui:ToggleSwitch x:Name="QuerySwitch" Content="OSCQuery を使う（推奨）" Margin="0,18,0,0" />
+            <TextBlock TextWrapping="Wrap" FontSize="12" Margin="0,6,0,0" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Text="受信ポートを VRChat に知らせ、他のアプリと 9001 を取り合わずに済みます。VRChat の送信先ポートと、アバターの現在値も自動で取得します。" />
+
+            <TextBlock x:Name="ErrorText" Margin="0,12,0,0" TextWrapping="Wrap" FontSize="12" />
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,18,0,0">
+                <ui:Button Content="キャンセル" MinWidth="90" Click="Cancel_Click" />
+                <ui:Button Content="保存" Appearance="Primary" MinWidth="90" Margin="10,0,0,0" Click="Save_Click" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</ui:FluentWindow>
