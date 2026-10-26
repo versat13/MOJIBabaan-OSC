@@ -18,6 +18,7 @@ static class Palette
     public static readonly Brush RedSoft = B("#55D13438");
     public static readonly Brush RedLine = B("#FFE5484D");
     public static readonly Brush Green = B("#5BD98B");
+    public static readonly Brush Amber = B("#E8A93B");
     public static readonly Brush Gray = B("#80808A");
     public static readonly Brush Faint = B("#14FFFFFF");
     public static readonly Brush FaintLine = B("#22FFFFFF");

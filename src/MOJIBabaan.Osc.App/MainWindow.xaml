@@ -3,13 +3,19 @@
                  xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                  xmlns:ui="http://schemas.lepo.co/wpfui/2022/xaml"
                  Title="MOJIBabaan OSC"
-                 Width="960" Height="780" MinWidth="880" MinHeight="720"
+                 Width="1360" Height="720" MinWidth="720" MinHeight="640"
                  ExtendsContentIntoTitleBar="True"
                  WindowBackdropType="None"
                  WindowCornerPreference="Round"
                  WindowStartupLocation="CenterScreen">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="B2V" />
+
+        <SolidColorBrush x:Key="GoldBrush" Color="#F2C94C" />
+        <SolidColorBrush x:Key="GoldLineBrush" Color="#80F2C94C" />
+        <SolidColorBrush x:Key="GoldSoftBrush" Color="#26F2C94C" />
+        <SolidColorBrush x:Key="RedBrush" Color="#FF6B6B" />
+        <SolidColorBrush x:Key="DimBrush" Color="#6E6E78" />
 
         <Style x:Key="Card" TargetType="Border">
             <Setter Property="Background" Value="{DynamicResource CardBackgroundFillColorDefaultBrush}" />
@@ -19,10 +25,36 @@
             <Setter Property="Padding" Value="16" />
         </Style>
 
+        <!-- 入力カード: 登録済みと違うあいだ、縁が金色になる -->
+        <Style x:Key="InputCard" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource GoldLineBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- 配信中カード: 配信しているあいだ、縁が金色になる -->
+        <Style x:Key="SendCard" TargetType="Border" BasedOn="{StaticResource Card}">
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsSending}" Value="True">
+                    <Setter Property="BorderBrush" Value="{StaticResource GoldLineBrush}" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
         <Style x:Key="CardTitle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="14" />
             <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        </Style>
+
+        <Style x:Key="CardIcon" TargetType="ui:SymbolIcon">
+            <Setter Property="FontSize" Value="18" />
+            <Setter Property="Margin" Value="0,0,8,0" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{StaticResource GoldBrush}" />
         </Style>
 
         <Style x:Key="Pill" TargetType="Border">
@@ -30,6 +62,33 @@
             <Setter Property="CornerRadius" Value="13" />
             <Setter Property="Padding" Value="11,4" />
             <Setter Property="Margin" Value="0,0,8,0" />
+        </Style>
+
+        <!-- カード間の矢印: 入力と登録済みが違うあいだは金色でゆっくり点滅、同じなら灰色で静止 -->
+        <Style x:Key="FlowArrow" TargetType="ui:SymbolIcon">
+            <Setter Property="FontSize" Value="30" />
+            <Setter Property="Foreground" Value="#40FFFFFF" />
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsDirty}" Value="True">
+                    <Setter Property="Foreground" Value="{StaticResource GoldBrush}" />
+                    <DataTrigger.EnterActions>
+                        <BeginStoryboard x:Name="Blink">
+                            <Storyboard RepeatBehavior="Forever" AutoReverse="True">
+                                <DoubleAnimation Storyboard.TargetProperty="Opacity" From="1" To="0.25" Duration="0:0:0.9">
+                                    <DoubleAnimation.EasingFunction>
+                                        <SineEase EasingMode="EaseInOut" />
+                                    </DoubleAnimation.EasingFunction>
+                                </DoubleAnimation>
+                            </Storyboard>
+                        </BeginStoryboard>
+                    </DataTrigger.EnterActions>
+                    <DataTrigger.ExitActions>
+                        <StopStoryboard BeginStoryboardName="Blink" />
+                    </DataTrigger.ExitActions>
+                </DataTrigger>
+            </Style.Triggers>
         </Style>
     </Window.Resources>
 
@@ -41,22 +100,16 @@
 
         <ui:TitleBar Grid.Row="0" Title="MOJIBabaan OSC" />
 
-        <Grid Grid.Row="1" Margin="24,6,24,20">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*" />
-                <ColumnDefinition Width="20" />
-                <ColumnDefinition Width="290" />
-            </Grid.ColumnDefinitions>
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="24,6,24,20">
 
-            <!-- 左: 入力・プレビュー・ボタン・登録内容 -->
-            <StackPanel Grid.Column="0">
-
+                <!-- 接続の状態 -->
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <WrapPanel VerticalAlignment="Center">
                         <Border Style="{StaticResource Pill}">
                             <StackPanel Orientation="Horizontal">
                                 <Ellipse Width="8" Height="8" Fill="{Binding RecvBrush}" VerticalAlignment="Center" Margin="0,0,7,0" />
@@ -69,7 +122,13 @@
                                 <TextBlock Text="{Binding AvatarText}" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
                             </StackPanel>
                         </Border>
-                    </StackPanel>
+                        <Border Style="{StaticResource Pill}">
+                            <StackPanel Orientation="Horizontal">
+                                <Ellipse Width="8" Height="8" Fill="{Binding CapacityBrush}" VerticalAlignment="Center" Margin="0,0,7,0" />
+                                <TextBlock Text="{Binding CapacityText}" FontSize="12" Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                            </StackPanel>
+                        </Border>
+                    </WrapPanel>
                     <ui:Button Grid.Column="1" Appearance="Transparent" ToolTip="設定"
                                Icon="{ui:SymbolIcon Settings24}" Click="Settings_Click" />
                 </Grid>
@@ -77,133 +136,251 @@
                 <TextBlock Text="{Binding NetNote}" Visibility="{Binding HasNetNote, Converter={StaticResource B2V}}"
                            Foreground="{DynamicResource TextFillColorSecondaryBrush}" FontSize="12" TextWrapping="Wrap" Margin="0,8,0,0" />
 
-                <!-- 入力 -->
-                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-                    <StackPanel>
-                        <TextBlock Text="文言" Style="{StaticResource CardTitle}" />
-                        <Grid Margin="0,10,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="52" />
-                            </Grid.ColumnDefinitions>
-                            <ui:TextBox x:Name="Line1Box" Text="{Binding Line1, UpdateSourceTrigger=PropertyChanged}"
-                                        PlaceholderText="1 行目（10 文字まで）" FontSize="16" KeyDown="Input_KeyDown" />
-                            <TextBlock Grid.Column="1" Text="{Binding Count1}" Foreground="{Binding Count1Brush}"
-                                       HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12" />
-                        </Grid>
-                        <Grid Margin="0,8,0,0">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="52" />
-                            </Grid.ColumnDefinitions>
-                            <ui:TextBox x:Name="Line2Box" Text="{Binding Line2, UpdateSourceTrigger=PropertyChanged}"
-                                        PlaceholderText="2 行目（空でも可）" FontSize="16" KeyDown="Input_KeyDown" />
-                            <TextBlock Grid.Column="1" Text="{Binding Count2}" Foreground="{Binding Count2Brush}"
-                                       HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12" />
-                        </Grid>
-                    </StackPanel>
-                </Border>
+                <!-- 入力 → 配信中 → 登録済み（狭いときは上から下へ。並べ替えは MainWindow.xaml.cs） -->
+                <Grid x:Name="FlowGrid" Margin="0,12,0,0">
 
-                <!-- プレビュー -->
-                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-                    <StackPanel>
-                        <TextBlock Text="プレビュー（送られる内容）" Style="{StaticResource CardTitle}" />
-                        <ItemsControl ItemsSource="{Binding Cells}" Margin="0,10,0,0">
-                            <ItemsControl.ItemsPanel>
-                                <ItemsPanelTemplate>
-                                    <UniformGrid Columns="10" Rows="2" />
-                                </ItemsPanelTemplate>
-                            </ItemsControl.ItemsPanel>
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="2" Height="50" CornerRadius="6" BorderThickness="1"
-                                            Background="{Binding Fill}" BorderBrush="{Binding Stroke}">
-                                        <TextBlock Text="{Binding Text}" Foreground="{Binding Fore}" FontSize="24" FontWeight="Bold"
-                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                        <TextBlock Text="{Binding UnsupportedNote}" Visibility="{Binding HasUnsupported, Converter={StaticResource B2V}}"
-                                   Foreground="{x:Static SystemColors.ControlTextBrush}" TextWrapping="Wrap" FontSize="12" Margin="2,8,0,0"
-                                   x:Name="UnsupportedText" />
-                        <TextBlock Text="{Binding OverflowNote}" Visibility="{Binding HasOverflow, Converter={StaticResource B2V}}"
-                                   TextWrapping="Wrap" FontSize="12" Margin="2,4,0,0" x:Name="OverflowText" />
-                    </StackPanel>
-                </Border>
+                    <!-- 1. 入力 -->
+                    <Border x:Name="InputCard" Style="{StaticResource InputCard}">
+                        <StackPanel>
+                            <Grid>
+                                <StackPanel Orientation="Horizontal">
+                                    <ui:SymbolIcon Symbol="Edit24" Style="{StaticResource CardIcon}" />
+                                    <TextBlock Text="入力" Style="{StaticResource CardTitle}" />
+                                </StackPanel>
+                                <Border HorizontalAlignment="Right" VerticalAlignment="Center" CornerRadius="10" Padding="9,2"
+                                        Background="{StaticResource GoldSoftBrush}"
+                                        Visibility="{Binding IsDirty, Converter={StaticResource B2V}}">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Ellipse Width="6" Height="6" Fill="{StaticResource GoldBrush}" VerticalAlignment="Center" Margin="0,0,6,0" />
+                                        <TextBlock Text="未登録" FontSize="11" FontWeight="SemiBold" Foreground="{StaticResource GoldBrush}" />
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
 
-                <!-- ボタン -->
-                <StackPanel Orientation="Horizontal" Margin="0,14,0,0">
-                    <ui:Button Content="登録" MinWidth="110" Height="38" IsEnabled="{Binding CanOperate}" Click="Register_Click" />
-                    <ui:Button Content="登録して再生" Appearance="Primary" MinWidth="150" Height="38" Margin="10,0,0,0"
-                               IsEnabled="{Binding CanOperate}" Click="RegisterPlay_Click" />
-                    <ui:Button Content="再生" MinWidth="90" Height="38" Margin="10,0,0,0"
-                               IsEnabled="{Binding CanOperate}" Click="Play_Click" />
-                </StackPanel>
-                <TextBlock Text="{Binding Status}" Foreground="{Binding StatusBrush}" FontSize="12" TextWrapping="Wrap" Margin="2,8,0,0" MinHeight="18" />
+                            <Grid Margin="0,12,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="58" />
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBox x:Name="Line1Box" Text="{Binding Line1, UpdateSourceTrigger=PropertyChanged}"
+                                            PlaceholderText="1 行目" FontSize="16" KeyDown="Input_KeyDown" TextChanged="Line1_TextChanged" />
+                                <TextBlock Grid.Column="1" Text="{Binding Count1}" Foreground="{Binding Count1Brush}"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12" />
+                            </Grid>
+                            <Grid Margin="0,8,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="58" />
+                                </Grid.ColumnDefinitions>
+                                <ui:TextBox x:Name="Line2Box" Text="{Binding Line2, UpdateSourceTrigger=PropertyChanged}"
+                                            PlaceholderText="2 行目" FontSize="16" KeyDown="Input_KeyDown" />
+                                <TextBlock Grid.Column="1" Text="{Binding Count2}" Foreground="{Binding Count2Brush}"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" FontSize="12" />
+                            </Grid>
 
-                <!-- 登録内容 -->
-                <Border Style="{StaticResource Card}" Margin="0,12,0,0">
-                    <StackPanel>
-                        <TextBlock Text="アバターの登録内容" Style="{StaticResource CardTitle}" />
-                        <TextBlock Text="不明（VRChat から値を受け取るまで）" Margin="0,8,0,0" FontSize="13"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}"
-                                   Visibility="{Binding RegUnknown, Converter={StaticResource B2V}}" />
-                        <StackPanel Margin="0,8,0,0" Visibility="{Binding RegKnown, Converter={StaticResource B2V}}">
-                            <TextBlock Text="{Binding RegLine1}" FontSize="22" FontWeight="Bold" x:Name="Reg1" />
-                            <TextBlock Text="{Binding RegLine2}" FontSize="22" FontWeight="Bold" x:Name="Reg2" />
+                            <!-- マスのプレビュー（未対応の字は赤） -->
+                            <ItemsControl ItemsSource="{Binding Cells}" Margin="0,14,0,0">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Rows="2"
+                                                     Columns="{Binding DataContext.PerLine, RelativeSource={RelativeSource AncestorType=ItemsControl}}" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Border Margin="1.5" Height="36" CornerRadius="5" BorderThickness="1"
+                                                Background="{Binding Fill}" BorderBrush="{Binding Stroke}">
+                                            <TextBlock Text="{Binding Text}" Foreground="{Binding Fore}" FontSize="17" FontWeight="Bold"
+                                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Text="{Binding UnsupportedNote}" Visibility="{Binding HasUnsupported, Converter={StaticResource B2V}}"
+                                       Foreground="{StaticResource RedBrush}" TextWrapping="Wrap" FontSize="12" Margin="2,8,0,0" />
+                            <TextBlock Text="{Binding OverflowNote}" Visibility="{Binding HasOverflow, Converter={StaticResource B2V}}"
+                                       Foreground="{StaticResource RedBrush}" TextWrapping="Wrap" FontSize="12" Margin="2,4,0,0" />
+
+                            <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+                                <ui:Button Content="登録" Icon="{ui:SymbolIcon Save24}" MinWidth="110" Height="38"
+                                           IsEnabled="{Binding CanOperate}" Click="Register_Click" />
+                                <ui:Button Content="登録して再生" Icon="{ui:SymbolIcon Play24}" Appearance="Primary" MinWidth="150" Height="38" Margin="10,0,0,0"
+                                           IsEnabled="{Binding CanOperate}" Click="RegisterPlay_Click" />
+                            </StackPanel>
                         </StackPanel>
+                    </Border>
+
+                    <!-- 矢印 1 -->
+                    <Grid x:Name="ArrowA">
+                        <ui:SymbolIcon x:Name="ArrowAIcon" Symbol="ArrowRight24" Style="{StaticResource FlowArrow}" />
+                    </Grid>
+
+                    <!-- 2. 配信中 -->
+                    <Border x:Name="SendCard" Style="{StaticResource SendCard}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Send24" Style="{StaticResource CardIcon}" />
+                                <TextBlock Text="配信中" Style="{StaticResource CardTitle}" />
+                            </StackPanel>
+
+                            <!-- 何も配信していない -->
+                            <StackPanel Grid.Row="1" VerticalAlignment="Center" HorizontalAlignment="Center" Margin="0,14,0,0"
+                                        Visibility="{Binding IsNotSending, Converter={StaticResource B2V}}">
+                                <ui:SymbolIcon Symbol="CheckmarkCircle24" FontSize="34" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Center" />
+                                <TextBlock Text="配信なし" FontSize="12" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                            </StackPanel>
+
+                            <!-- 全員に届くまで -->
+                            <StackPanel Grid.Row="1" VerticalAlignment="Center" Margin="0,14,0,0"
+                                        Visibility="{Binding IsSending, Converter={StaticResource B2V}}">
+                                <Border CornerRadius="6" Background="#33000000" Padding="10,8">
+                                    <Viewbox StretchDirection="DownOnly" Stretch="Uniform" MaxHeight="76">
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding SendLine1}" FontSize="24" FontWeight="Bold" TextAlignment="Center"
+                                                       Foreground="{StaticResource GoldBrush}" HorizontalAlignment="Center" />
+                                            <TextBlock Text="{Binding SendLine2}" FontSize="24" FontWeight="Bold" TextAlignment="Center"
+                                                       Foreground="{StaticResource GoldBrush}" HorizontalAlignment="Center" />
+                                        </StackPanel>
+                                    </Viewbox>
+                                </Border>
+                                <ProgressBar Minimum="0" Maximum="1" Value="{Binding SendProgress, Mode=OneWay}" Height="8" Margin="0,14,0,0"
+                                             Foreground="{StaticResource GoldBrush}" />
+                                <TextBlock Text="{Binding SendRemaining}" FontSize="12" Foreground="{StaticResource GoldBrush}"
+                                           HorizontalAlignment="Right" Margin="0,6,0,0" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- 矢印 2 -->
+                    <Grid x:Name="ArrowB">
+                        <ui:SymbolIcon x:Name="ArrowBIcon" Symbol="ArrowRight24" Style="{StaticResource FlowArrow}" />
+                    </Grid>
+
+                    <!-- 3. 登録済み（アバターから読み取った実物。一番大きい） -->
+                    <Border x:Name="RegCard" Style="{StaticResource Card}" Padding="18" BorderBrush="{StaticResource GoldLineBrush}" MinHeight="300">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                            </Grid.RowDefinitions>
+                            <StackPanel Orientation="Horizontal">
+                                <ui:SymbolIcon Symbol="Play24" Style="{StaticResource CardIcon}" />
+                                <TextBlock Text="メニューで再生される内容" Style="{StaticResource CardTitle}" />
+                            </StackPanel>
+
+                            <!-- VRChat で出る見た目に近いプレビュー（金色の太字、2 行、中央寄せ） -->
+                            <Border Grid.Row="1" Margin="0,14,0,0" CornerRadius="8" Padding="16,12" MinHeight="220"
+                                    BorderThickness="1" BorderBrush="#22FFFFFF">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0.5,0" EndPoint="0.5,1">
+                                        <GradientStop Color="#E00C0C12" Offset="0" />
+                                        <GradientStop Color="#E0181420" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid>
+                                    <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center"
+                                                Visibility="{Binding RegUnknown, Converter={StaticResource B2V}}">
+                                        <ui:SymbolIcon Symbol="ArrowSync24" FontSize="34" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Center" />
+                                        <TextBlock Text="受信待ち" FontSize="12" Foreground="{StaticResource DimBrush}" HorizontalAlignment="Center" Margin="0,6,0,0" />
+                                    </StackPanel>
+                                    <TextBlock Text="（空）" FontSize="20" Foreground="{StaticResource DimBrush}"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               Visibility="{Binding RegShowEmpty, Converter={StaticResource B2V}}" />
+                                    <Viewbox StretchDirection="DownOnly" Stretch="Uniform" VerticalAlignment="Center"
+                                             Visibility="{Binding RegHasText, Converter={StaticResource B2V}}"
+                                             RenderTransformOrigin="0.5,0.5">
+                                        <Viewbox.RenderTransform>
+                                            <ScaleTransform x:Name="RegScale" ScaleX="1" ScaleY="1" />
+                                        </Viewbox.RenderTransform>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding RegLine1}" FontSize="48" FontWeight="Bold" TextAlignment="Center"
+                                                       Foreground="{StaticResource GoldBrush}" HorizontalAlignment="Center">
+                                                <TextBlock.Effect>
+                                                    <DropShadowEffect Color="#F2C94C" BlurRadius="16" ShadowDepth="0" Opacity="0.35" />
+                                                </TextBlock.Effect>
+                                            </TextBlock>
+                                            <TextBlock Text="{Binding RegLine2}" FontSize="48" FontWeight="Bold" TextAlignment="Center"
+                                                       Foreground="{StaticResource GoldBrush}" HorizontalAlignment="Center">
+                                                <TextBlock.Effect>
+                                                    <DropShadowEffect Color="#F2C94C" BlurRadius="16" ShadowDepth="0" Opacity="0.35" />
+                                                </TextBlock.Effect>
+                                            </TextBlock>
+                                        </StackPanel>
+                                    </Viewbox>
+                                </Grid>
+                            </Border>
+
+                            <!-- 入れ替わった瞬間に光る -->
+                            <Border x:Name="RegFlash" Grid.RowSpan="2" Opacity="0" IsHitTestVisible="False" CornerRadius="8"
+                                    BorderThickness="2" BorderBrush="{StaticResource GoldBrush}" Background="#33F2C94C" Margin="-18" />
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <TextBlock Text="{Binding Status}" Foreground="{Binding StatusBrush}" FontSize="12" TextWrapping="Wrap" Margin="2,10,0,0" MinHeight="18" />
+
+                <!-- 履歴 -->
+                <Border Style="{StaticResource Card}" Margin="0,8,0,0">
+                    <StackPanel>
+                        <StackPanel Orientation="Horizontal">
+                            <ui:SymbolIcon Symbol="History24" Style="{StaticResource CardIcon}" />
+                            <TextBlock Text="履歴" Style="{StaticResource CardTitle}" />
+                        </StackPanel>
+                        <ScrollViewer MaxHeight="230" VerticalScrollBarVisibility="Auto" Margin="0,10,0,0">
+                            <ItemsControl ItemsSource="{Binding Rows}">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <WrapPanel />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Grid Width="340" Margin="0,0,12,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- ピン（左） -->
+                                            <ui:Button Appearance="Transparent" Padding="8" Click="Pin_Click" ToolTip="ピン留め">
+                                                <ui:SymbolIcon Symbol="Pin24" Filled="{Binding Pinned}" FontSize="16">
+                                                    <ui:SymbolIcon.Style>
+                                                        <Style TargetType="ui:SymbolIcon">
+                                                            <Setter Property="Opacity" Value="0.35" />
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Pinned}" Value="True">
+                                                                    <Setter Property="Opacity" Value="1" />
+                                                                    <Setter Property="Foreground" Value="#F2C94C" />
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </ui:SymbolIcon.Style>
+                                                </ui:SymbolIcon>
+                                            </ui:Button>
+
+                                            <!-- 文言（クリックで入力欄へ） -->
+                                            <ui:Button Grid.Column="1" Appearance="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
+                                                       Click="HistoryItem_Click" ToolTip="{Binding Label}">
+                                                <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
+                                            </ui:Button>
+
+                                            <!-- ゴミ箱（右端。確認なしで削除） -->
+                                            <ui:Button Grid.Column="2" Appearance="Transparent" Padding="8" Click="Delete_Click" ToolTip="削除">
+                                                <ui:SymbolIcon Symbol="Delete24" FontSize="16" Foreground="{StaticResource RedBrush}" Opacity="0.7" />
+                                            </ui:Button>
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
                     </StackPanel>
                 </Border>
             </StackPanel>
-
-            <!-- 右: 履歴 -->
-            <Border Grid.Column="2" Style="{StaticResource Card}" Margin="0,38,0,0">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto" />
-                        <RowDefinition Height="*" />
-                    </Grid.RowDefinitions>
-                    <StackPanel>
-                        <TextBlock Text="履歴" Style="{StaticResource CardTitle}" />
-                        <TextBlock Text="クリックで入力欄に戻します。ピンは上限に数えません。" FontSize="11"
-                                   Foreground="{DynamicResource TextFillColorTertiaryBrush}" TextWrapping="Wrap" Margin="0,4,0,8" />
-                    </StackPanel>
-                    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-                        <ItemsControl ItemsSource="{Binding Rows}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid Margin="0,0,0,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                        </Grid.ColumnDefinitions>
-                                        <ui:Button Appearance="Transparent" HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"
-                                                   Click="HistoryItem_Click" ToolTip="{Binding Label}">
-                                            <TextBlock Text="{Binding Label}" TextTrimming="CharacterEllipsis" />
-                                        </ui:Button>
-                                        <ui:Button Grid.Column="1" Appearance="Transparent" Padding="8" Click="Pin_Click" ToolTip="ピン留め">
-                                            <ui:SymbolIcon Symbol="Pin24" Filled="{Binding Pinned}" FontSize="16">
-                                                <ui:SymbolIcon.Style>
-                                                    <Style TargetType="ui:SymbolIcon">
-                                                        <Setter Property="Opacity" Value="0.35" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding Pinned}" Value="True">
-                                                                <Setter Property="Opacity" Value="1" />
-                                                                <Setter Property="Foreground" Value="#F2C94C" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </ui:SymbolIcon.Style>
-                                            </ui:SymbolIcon>
-                                        </ui:Button>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </ScrollViewer>
-                </Grid>
-            </Border>
-        </Grid>
+        </ScrollViewer>
     </Grid>
 </ui:FluentWindow>

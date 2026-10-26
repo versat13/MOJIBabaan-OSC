@@ -76,7 +76,7 @@ public class BabaanTextTests
     [Fact]
     public void セル化_2行目は10番から()
     {
-        var r = BabaanText.ParseLines("あ", "い", Map);
+        var r = BabaanText.ParseLines("あ", "い", Map, BabaanText.LegacyPerLine);
         Assert.Equal(2, r.Nos[0]);
         Assert.Equal(4, r.Nos[10]);
         Assert.Equal(1, r.Len1);
@@ -86,7 +86,7 @@ public class BabaanTextTests
     [Fact]
     public void 行頭が空でも2行目は2行目()
     {
-        var r = BabaanText.ParseLines("", "あ", Map);
+        var r = BabaanText.ParseLines("", "あ", Map, BabaanText.LegacyPerLine);
         Assert.Equal(0, r.Nos[0]);
         Assert.Equal(2, r.Nos[10]);
         Assert.Equal(0, r.Len1);
@@ -95,7 +95,7 @@ public class BabaanTextTests
     [Fact]
     public void 超過は切り捨てて超過分を覚える()
     {
-        var r = BabaanText.ParseLines("あいうえおかきくけこさし", "", Map);
+        var r = BabaanText.ParseLines("あいうえおかきくけこさし", "", Map, BabaanText.LegacyPerLine);
         Assert.Equal(12, r.Len1);
         Assert.True(r.Over1);
         Assert.Equal("さし", r.Overflow1);
@@ -136,7 +136,7 @@ public class BabaanTextTests
     [Fact]
     public void 登録メッセージは42個で順番どおり()
     {
-        var r = BabaanText.ParseLines("あいう", "えお", Map);
+        var r = BabaanText.ParseLines("あいう", "えお", Map, BabaanText.LegacyPerLine);
         var msgs = BabaanMessages.BuildRegister(r);
         Assert.Equal(42, msgs.Count);
         Assert.Equal("/avatar/parameters/BBN/O00h", msgs[0].Address);

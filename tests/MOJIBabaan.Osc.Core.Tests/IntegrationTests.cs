@@ -36,7 +36,7 @@ public class IntegrationTests
         using var l = new Listener();
         using var s = new OscSender(l.EndPoint);
         var bs = new BabaanSender(s);
-        var r = BabaanText.ParseLines("5000兆円", "欲しい", Map);
+        var r = BabaanText.ParseLines("5000兆円", "欲しい", Map, BabaanText.LegacyPerLine);
 
         await bs.RegisterAsync(r);
         await l.ReceiveAsync(42);
@@ -77,7 +77,7 @@ public class IntegrationTests
         var bs = new BabaanSender(s, (t, ct) => { waits.Add(t); return Task.CompletedTask; });
         var counts = new List<int>();
 
-        await bs.RegisterAndPlayAsync(BabaanText.ParseLines("お嬢様", "", Map), counts.Add);
+        await bs.RegisterAndPlayAsync(BabaanText.ParseLines("お嬢様", "", Map, BabaanText.LegacyPerLine), counts.Add);
         await l.ReceiveAsync(44);
 
         var msgs = l.Decoded();
